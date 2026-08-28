@@ -39,6 +39,25 @@ jobs:
           sdkmanager --install "build-tools;35.0.0"
           sdkmanager --install "ndk;27.2.12479018"
 
+      - name: Compilar APK
+        run: |
+          echo "Buscando proyecto Gradle..."
+          GRADLEW=$(find project -type f -name "gradlew" | head -n 1)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: No se encontró gradlew."
+            echo "Contenido del proyecto:"
+            find project -maxdepth 3 -type f -print
+            exit 1
+          fi
+
+          echo "Gradle encontrado: $GRADLEW"
+
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          cd "$PROJECT_DIR"
+
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
       - name: Buscar APK generado
         run: |
           echo "Buscando APK..."
