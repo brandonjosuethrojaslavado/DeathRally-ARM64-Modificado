@@ -41,23 +41,15 @@ jobs:
 
       - name: Compilar APK
         run: |
-          echo "Buscando proyecto Gradle..."
-          GRADLEW=$(find project -type f -name "gradlew" | head -n 1)
+          echo "Entrando al proyecto Android..."
+          cd project/src
 
-          if [ -z "$GRADLEW" ]; then
-            echo "ERROR: No se encontró gradlew."
-            echo "Contenido del proyecto:"
-            find project -maxdepth 3 -type f -print
-            exit 1
-          fi
+          echo "Contenido del proyecto:"
+          ls -la
 
-          echo "Gradle encontrado: $GRADLEW"
-
-          PROJECT_DIR=$(dirname "$GRADLEW")
-          cd "$PROJECT_DIR"
-
-          chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace
+          echo "Compilando APK ARM64..."
+          gradle assembleRelease --stacktrace --no-daemon
+          
       - name: Buscar APK generado
         run: |
           echo "Buscando APK..."
