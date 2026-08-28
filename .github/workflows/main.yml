@@ -50,4 +50,4 @@ jobs:
         with:
           name: DeathRally-ARM64-APK
           path: path: '**/*.apk'
-          if-no-files-found: error  
+  
