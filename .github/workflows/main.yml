@@ -20,9 +20,6 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Instalar NDK
-        uses: android-actions/setup-android@v3
-
       - name: Extraer proyecto
         run: |
           mkdir -p project
@@ -49,13 +46,13 @@ jobs:
 
           echo "Compilando APK ARM64..."
           gradle assembleRelease --stacktrace --no-daemon
-          
-      - name: Buscar APK generado
-        run: |
-          echo "Buscando APK..."
-          find . -type f -name "*.apk" -print
 
-          APK=$(find . -type f -name "*.apk" | head -n 1)
+      - name: Firmar APK
+        run: |
+          set -e
+
+          echo "Buscando APK..."
+          APK=$(find project/src -type f -name "*.apk" | head -n 1)
 
           if [ -z "$APK" ]; then
             echo "ERROR: No se encontró ningún APK."
@@ -63,6 +60,65 @@ jobs:
           fi
 
           echo "APK encontrado: $APK"
+
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          KEYSTORE="$RUNNER_TEMP/deathrally.keystore"
+          ALIGNED="$RUNNER_TEMP/app-aligned.apk"
+
+          echo "Creando keystore..."
+          keytool -genkeypair \
+            -v \
+            -keystore "$KEYSTORE" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+          echo "Alineando APK..."
+          "$BUILD_TOOLS/zipalign" \
+            -f -p 4 \
+            "$APK" \
+            "$ALIGNED"
+
+          echo "Firmando APK..."
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$KEYSTORE" \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --ks-key-alias androiddebugkey \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            "$ALIGNED"
+
+          echo "Reemplazando APK original..."
+          mv "$ALIGNED" "$APK"
+
+          echo "Verificando firma..."
+          "$BUILD_TOOLS/apksigner" verify \
+            --verbose \
+            --print-certs \
+            "$APK"
+
+          echo "Firma verificada correctamente."
+
+      - name: Buscar APK generado
+        run: |
+          echo "Buscando APK..."
+          find project/src -type f -name "*.apk" -print
+
+          APK=$(find project/src -type f -name "*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: No se encontró ningún APK."
+            exit 1
+          fi
+
+          echo "APK encontrado: $APK"
+
           mkdir -p artifacts
           cp "$APK" artifacts/app.apk
 
@@ -71,4 +127,4 @@ jobs:
         with:
           name: APK-generado
           path: artifacts/app.apk
-          if-no-files-found: error   
+          if-no-files-found: error
