@@ -40,14 +40,27 @@ jobs:
           sdkmanager --install "build-tools;35.0.0"
           sdkmanager --install "ndk;27.2.12479018"
 
-      - name: Buscar APK generado
+            - name: Buscar APK generado
+        shell: bash
         run: |
           echo "Buscando APK..."
-          find project -type f -name "*.apk" -print
+          find . -type f -name "*.apk" -print
+
+          APK=$(find . -type f -name "*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: No se encontró ningún APK."
+            exit 1
+          fi
+
+          echo "APK encontrado: $APK"
+          mkdir -p artifacts
+          cp "$APK" artifacts/app.apk
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: DeathRally-ARM64-APK
-          path: '**/*.apk'
+          name: APK-generado
+          path: artifacts/app.apk
+          if-no-files-found: error
   
