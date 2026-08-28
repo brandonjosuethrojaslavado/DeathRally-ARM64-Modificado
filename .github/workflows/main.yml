@@ -34,14 +34,12 @@ jobs:
 
       - name: Preparar NDK
         run: |
-         sdkmanager --install "platform-tools"
-         sdkmanager --install "platform-tools"
+          sdkmanager --install "platform-tools"
           sdkmanager --install "platforms;android-35"
           sdkmanager --install "build-tools;35.0.0"
           sdkmanager --install "ndk;27.2.12479018"
 
-            - name: Buscar APK generado
-        shell: bash
+      - name: Buscar APK generado
         run: |
           echo "Buscando APK..."
           find . -type f -name "*.apk" -print
@@ -62,5 +60,4 @@ jobs:
         with:
           name: APK-generado
           path: artifacts/app.apk
-          if-no-files-found: error
-  
+          if-no-files-found: error   
