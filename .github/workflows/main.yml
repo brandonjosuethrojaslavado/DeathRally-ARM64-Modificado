@@ -38,3 +38,36 @@ jobs:
           sdkmanager --install "platforms;android-35"
           sdkmanager --install "build-tools;35.0.0"
           sdkmanager --install "ndk;27.2.12479018"
+              - name: Compilar APK
+        run: |
+          echo "Buscando proyecto Android..."
+          find project -name "gradlew" -type f -print
+
+          GRADLEW=$(find project -name "gradlew" -type f -print -quit)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: No se encontró gradlew"
+            echo "Archivos del proyecto:"
+            find project -maxdepth 4 -type f | head -200
+            exit 1
+          fi
+
+          chmod +x "$GRADLEW"
+          PROJECT_DIR=$(dirname "$GRADLEW")
+
+          echo "Proyecto encontrado en: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Buscar APK generado
+        run: |
+          echo "Buscando APK..."
+          find project -type f -name "*.apk" -print
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeathRally-ARM64-APK
+          path: project/**/*.apk
+          if-no-files-found: error  
